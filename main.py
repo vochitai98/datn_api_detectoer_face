@@ -1,5 +1,5 @@
 import os
-
+import shutil
 from flask import Flask, jsonify, request
 
 from logger import get_logger
@@ -21,9 +21,10 @@ deepface_reg = DeepFaceRecognition(detector_backend="retinaface", face_model="Ar
 def recognize():
     try:
         file = request.files["file"]
+        classId = request.form["classId"]
         file.save(app.config['TMP_IMG_PATH'])
         logger.info("Get data successfully")
-        output = deepface_reg.recognize(app.config['TMP_IMG_PATH'])
+        output = deepface_reg.recognize(app.config['TMP_IMG_PATH'],classId)
         logger.info(output)
 
     except Exception as e:
@@ -43,9 +44,10 @@ def register():
             return jsonify({'error': 'No selected file'})
 
         username = request.form.get('username')
+        classId = request.form.get('classId')
         if file and username:
             filename = username + '.jpg'
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'] + "/" + classId, filename)
             file.save(file_path)
             return jsonify({'message': 'File uploaded successfully', 'file_path': file_path})
 
@@ -53,6 +55,37 @@ def register():
         logger.info(e)
         return jsonify({'error': e})
 
+@app.route("/addClass", methods=["POST"])
+def registerClass():
+    try:
+        classId = request.form.get('classId')
+        class_folder = os.path.join(app.config['UPLOAD_FOLDER'], classId)
+        if not os.path.exists(class_folder):
+            os.makedirs(class_folder)
+            return jsonify({'message': f'Class {classId} registered successfully', 'class_folder': class_folder})
+        else:
+            return jsonify({'message': f'Class {classId} already exists', 'class_folder': class_folder})
+
+    except Exception as e:
+        logger.error(e)
+        return jsonify({'error': str(e)})
+
+@app.route("/deleteClass", methods=["POST"])
+def deleteClass():
+    try:
+        classId = request.form.get('classId')
+        class_folder = os.path.join(UPLOAD_FOLDER, classId)
+
+        if os.path.exists(class_folder):
+            shutil.rmtree(class_folder)
+            message = f"Class {classId} and its associated folder have been deleted successfully"
+        else:
+            message = f"Class {classId} does not exist"
+
+        return jsonify({'message': message})
+
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8888, debug=True)
