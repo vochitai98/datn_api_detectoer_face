@@ -9,10 +9,11 @@ class DeepFaceRecognition:
         self.distance_threshold = distance_threshold
 
     
-    def recognize(self, img_path): # attendance
+    def recognize(self, img_path,classId): # attendance
+        db_path_with_class = self.database + "/" + classId
         self.logger.info(f"image path: {img_path}")
         dfs = DeepFace.find(img_path = img_path,
-            db_path = self.database, 
+            db_path = db_path_with_class, 
             model_name = self.face_model,
             detector_backend = self.detector_backend,
             enforce_detection = False
