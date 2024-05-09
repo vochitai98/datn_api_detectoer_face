@@ -86,7 +86,37 @@ def deleteClass():
 
     except Exception as e:
         return jsonify({'error': str(e)})
+    
+@app.route("/updateStudentClass", methods=["POST"])
+def update_student_class():
+    try:
+        old_class_id = request.form.get('old_class_id')
+        username = request.form.get('username')  
+        new_class_id = request.form.get('new_class_id')
+        
+        # Get paths for old and new class folders
+        old_class_folder = os.path.join(UPLOAD_FOLDER, old_class_id)
+        new_class_folder = os.path.join(UPLOAD_FOLDER, new_class_id)
+        # Check if the old class folder exists
+        if os.path.exists(old_class_folder):
+            # Move student's image folder to the new class folder
+            if not os.path.exists(new_class_folder):
+                os.makedirs(new_class_folder)  # Create new class folder if it doesn't exist
+            # Move images from old class folder to new class folder
+            for filename in os.listdir(old_class_folder):
+                if filename == f"{username}.jpg":  # Assuming image files are named username.jpg
+                    old_image_path = os.path.join(old_class_folder, filename)
+                    new_image_path = os.path.join(new_class_folder, filename)
+                    shutil.move(old_image_path, new_image_path)
 
+            message = f"Student {username}'s class has been updated to {new_class_id}"
+        else:
+            message = f"Student {username}'s folder does not exist"
+
+        return jsonify({'message': message})
+
+    except Exception as e:
+        return jsonify({'error': str(e)})
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8888, debug=True)
 
